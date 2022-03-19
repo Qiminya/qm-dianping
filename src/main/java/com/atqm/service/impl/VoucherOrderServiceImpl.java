@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * <p>
@@ -34,11 +35,11 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     @Resource
     private RedisIdWorker redisIdWorker;
 
-    private static final Object object = new Object();
     @Override
     public Result seckillVoucher(Long voucherId) {
         // 1.查询优惠券
         SeckillVoucher voucher = seckillVoucherService.getById(voucherId);
+
         // 2.判断秒杀是否开始
         if(voucher.getBeginTime().isAfter(LocalDateTime.now())){
             return Result.fail("秒杀还没开始！");
@@ -51,17 +52,17 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         if(voucher.getStock() < 1){
             return  Result.fail("库存不足！");
         }
-        synchronized (object){
-            // 5.减少库存
-            boolean success = seckillVoucherService
-                    .update()
-                    .setSql("stock = stock - 1")
-                    .eq("voucher_id", voucherId)
-                    .update();
+        // 5.减少库存
+        // CAS 对待解决超卖问题
+        boolean success = seckillVoucherService
+                .update()
+                .setSql("stock = stock - 1")
+                .eq("voucher_id", voucherId)
+                .eq("stock",voucher.getStock())
+                .update();
 
-            if(!success){
-                return  Result.fail("库存不足！");
-            }
+        if(!success){
+            return  Result.fail("库存不足！");
         }
         // 6.创建订单
         VoucherOrder voucherOrder = new VoucherOrder();
