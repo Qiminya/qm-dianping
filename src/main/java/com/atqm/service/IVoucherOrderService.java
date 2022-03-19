@@ -1,5 +1,6 @@
 package com.atqm.service;
 
+import com.atqm.dto.Result;
 import com.atqm.entity.VoucherOrder;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -13,4 +14,5 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface IVoucherOrderService extends IService<VoucherOrder> {
 
+    Result seckillVoucher(Long voucherId);
 }
