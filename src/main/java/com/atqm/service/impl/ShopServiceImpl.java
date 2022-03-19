@@ -8,20 +8,17 @@ import com.atqm.dto.Result;
 import com.atqm.entity.Shop;
 import com.atqm.mapper.ShopMapper;
 import com.atqm.service.IShopService;
-import com.atqm.utils.RedisConstants;
+import com.atqm.utils.CacheClient;
 import com.atqm.utils.RedisData;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import javax.annotation.Resource;
 import java.time.LocalDateTime;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
 import static com.atqm.utils.RedisConstants.*;
 
 /**
@@ -35,13 +32,18 @@ import static com.atqm.utils.RedisConstants.*;
 @Service
 public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IShopService {
 
-    @Autowired
+    @Resource
     private StringRedisTemplate stringRedisTemplate;
+
+    @Resource
+    private CacheClient cacheClient;
+
 
     @Override
     public Result queryById(Long id) {
 //        Shop shop = queryWithMutex(id);
-        Shop shop = queryWithLogicalExpire(id);
+//        Shop shop = queryWithLogicalExpire(id);
+        Shop shop = cacheClient.queryWithMutex(CACHE_SHOP_KEY, id, Shop.class, Id -> getById(Id), 20l, TimeUnit.SECONDS);
         if (shop == null){
             return Result.fail("店铺不存在！");
         }
