@@ -58,7 +58,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
                 .update()
                 .setSql("stock = stock - 1")
                 .eq("voucher_id", voucherId)
-                .eq("stock",voucher.getStock())
+                .gt("stock",0)
                 .update();
 
         if(!success){
