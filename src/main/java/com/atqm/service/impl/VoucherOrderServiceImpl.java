@@ -34,6 +34,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     @Resource
     private RedisIdWorker redisIdWorker;
 
+    private static final Object object = new Object();
     @Override
     public Result seckillVoucher(Long voucherId) {
         // 1.查询优惠券
@@ -50,6 +51,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         if(voucher.getStock() < 1){
             return  Result.fail("库存不足！");
         }
+        synchronized (object){
             // 5.减少库存
             boolean success = seckillVoucherService
                     .update()
@@ -60,8 +62,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             if(!success){
                 return  Result.fail("库存不足！");
             }
-
-
+        }
         // 6.创建订单
         VoucherOrder voucherOrder = new VoucherOrder();
         // 6.1订单id
