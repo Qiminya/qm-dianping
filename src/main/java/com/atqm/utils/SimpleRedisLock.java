@@ -1,8 +1,11 @@
 package com.atqm.utils;
 
 import cn.hutool.core.lang.UUID;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 
@@ -12,6 +15,15 @@ public class SimpleRedisLock implements ILock{
     private StringRedisTemplate stringRedisTemplate;
     private static final String KEY_PREFIX = "lock";
     private static final String ID_PREFIX = UUID.randomUUID().toString(true)+"-";
+    private static final DefaultRedisScript<Long> UNLOCK_SCRIPT;
+    // 初始化lua脚本
+    static {
+        UNLOCK_SCRIPT = new DefaultRedisScript<>();
+        UNLOCK_SCRIPT.setLocation(new ClassPathResource("unlock.lua"));
+        UNLOCK_SCRIPT.setResultType(Long.TYPE);
+    }
+
+
 
     public SimpleRedisLock(String name, StringRedisTemplate stringRedisTemplate) {
         this.name = name;
@@ -37,12 +49,16 @@ public class SimpleRedisLock implements ILock{
 
         // 获取线程表示id
         String threadId = ID_PREFIX+Thread.currentThread().getId();
-                // 判断是否是当前线程的锁
-        String id = stringRedisTemplate.opsForValue().get(key);
 
         // 当前的锁是自己线程的才进行释放（删除）
-        if(threadId.equals(id)){
-            stringRedisTemplate.delete(key);
-        }
+//        if(threadId.equals(id)){
+//            stringRedisTemplate.delete(key);
+//        }
+
+        // 使用Lua脚本实现多个操作原子性
+        stringRedisTemplate.execute(
+                UNLOCK_SCRIPT,
+                Collections.singletonList(key),
+                Thread.currentThread().getId());
     }
 }
