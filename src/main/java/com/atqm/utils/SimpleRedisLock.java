@@ -13,7 +13,7 @@ public class SimpleRedisLock implements ILock{
 
     private String name;
     private StringRedisTemplate stringRedisTemplate;
-    private static final String KEY_PREFIX = "lock";
+    private static final String KEY_PREFIX = "lock:";
     private static final String ID_PREFIX = UUID.randomUUID().toString(true)+"-";
     private static final DefaultRedisScript<Long> UNLOCK_SCRIPT;
     // 初始化lua脚本
@@ -59,6 +59,7 @@ public class SimpleRedisLock implements ILock{
         stringRedisTemplate.execute(
                 UNLOCK_SCRIPT,
                 Collections.singletonList(key),
-                Thread.currentThread().getId());
+                threadId
+        );
     }
 }
