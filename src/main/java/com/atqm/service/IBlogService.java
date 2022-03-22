@@ -1,5 +1,6 @@
 package com.atqm.service;
 
+import com.atqm.dto.Result;
 import com.atqm.entity.Blog;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -13,4 +14,9 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface IBlogService extends IService<Blog> {
 
+    Result queryHotBlog(Integer current);
+
+    Result queryBlogBid(Long id);
+
+    Result likeBlog(Long id);
 }
